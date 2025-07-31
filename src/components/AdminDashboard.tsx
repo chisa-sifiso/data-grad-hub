@@ -1,12 +1,9 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, CheckCircle, XCircle, Clock, GraduationCap, TrendingUp } from "lucide-react";
+import { Users, GraduationCap } from "lucide-react";
 import { ApplicationsTable } from "./ApplicationsTable";
-import { ApplicationsSummary } from "./ApplicationsSummary";
 import { CVModal } from "./CVModal";
 import { Application, ApplicationStatus } from "../types/application";
 import { mockApplications } from "../data/mockData";
@@ -15,7 +12,6 @@ import { useToast } from "@/hooks/use-toast";
 export function AdminDashboard() {
   const [applications, setApplications] = useState<Application[]>([]);
   const [filteredApplications, setFilteredApplications] = useState<Application[]>([]);
-  const [activeTab, setActiveTab] = useState<ApplicationStatus>("Pending");
   const [searchTerm, setSearchTerm] = useState("");
   const [courseFilter, setCourseFilter] = useState<string>("all");
   const [selectedCV, setSelectedCV] = useState<Application | null>(null);
@@ -46,7 +42,7 @@ export function AdminDashboard() {
 
   // Filter applications
   useEffect(() => {
-    let filtered = applications.filter(app => app.applicationStatus === activeTab);
+    let filtered = [...applications];
 
     if (searchTerm) {
       filtered = filtered.filter(app => 
@@ -60,7 +56,7 @@ export function AdminDashboard() {
     }
 
     setFilteredApplications(filtered);
-  }, [applications, activeTab, searchTerm, courseFilter]);
+  }, [applications, searchTerm, courseFilter]);
 
   const updateApplicationStatus = async (applicationId: string, newStatus: ApplicationStatus) => {
     try {
@@ -89,17 +85,7 @@ export function AdminDashboard() {
     }
   };
 
-  const getStatusCounts = () => {
-    return {
-      pending: applications.filter(app => app.applicationStatus === "Pending").length,
-      approved: applications.filter(app => app.applicationStatus === "Approved").length,
-      rejected: applications.filter(app => app.applicationStatus === "Rejected").length,
-      total: applications.length
-    };
-  };
-
   const uniqueCourses = [...new Set(applications.map(app => app.courseCode))];
-  const statusCounts = getStatusCounts();
 
   if (loading) {
     return (
@@ -128,7 +114,7 @@ export function AdminDashboard() {
             <div className="flex items-center space-x-4 text-white">
               <div className="text-right">
                 <p className="text-sm opacity-90">Total Applications</p>
-                <p className="text-2xl font-bold">{statusCounts.total}</p>
+                <p className="text-2xl font-bold">{applications.length}</p>
               </div>
             </div>
           </div>
@@ -137,9 +123,6 @@ export function AdminDashboard() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Summary Cards */}
-        <ApplicationsSummary applications={applications} />
-
         {/* Filters */}
         <Card className="mb-8">
           <CardHeader>
@@ -173,59 +156,13 @@ export function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* Applications Tabs */}
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as ApplicationStatus)}>
-          <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="Pending" className="flex items-center gap-2">
-              <Clock className="h-4 w-4" />
-              Pending
-              <Badge variant="secondary" className="bg-status-pending text-white">
-                {statusCounts.pending}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="Approved" className="flex items-center gap-2">
-              <CheckCircle className="h-4 w-4" />
-              Approved
-              <Badge variant="secondary" className="bg-success text-white">
-                {statusCounts.approved}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="Rejected" className="flex items-center gap-2">
-              <XCircle className="h-4 w-4" />
-              Rejected
-              <Badge variant="secondary" className="bg-destructive text-white">
-                {statusCounts.rejected}
-              </Badge>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="Pending">
-            <ApplicationsTable
-              applications={filteredApplications}
-              onUpdateStatus={updateApplicationStatus}
-              onViewCV={setSelectedCV}
-              showActions={true}
-            />
-          </TabsContent>
-
-          <TabsContent value="Approved">
-            <ApplicationsTable
-              applications={filteredApplications}
-              onUpdateStatus={updateApplicationStatus}
-              onViewCV={setSelectedCV}
-              showActions={false}
-            />
-          </TabsContent>
-
-          <TabsContent value="Rejected">
-            <ApplicationsTable
-              applications={filteredApplications}
-              onUpdateStatus={updateApplicationStatus}
-              onViewCV={setSelectedCV}
-              showActions={false}
-            />
-          </TabsContent>
-        </Tabs>
+        {/* Applications Table */}
+        <ApplicationsTable
+          applications={filteredApplications}
+          onUpdateStatus={updateApplicationStatus}
+          onViewCV={setSelectedCV}
+          showActions={true}
+        />
       </main>
 
       {/* CV Modal */}
